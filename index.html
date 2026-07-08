@@ -169,7 +169,7 @@ hr.sep{border:none;border-top:1px solid var(--border);margin:18px 0}
 <body>
 
 <div class="top-warn">
-  ⚙️ Git-DB Pages build — paste your GitHub PAT in ⚙️ Show GitHub config to enable Sign-up / Edit writes. Reads work token-free via raw.githubusercontent.com
+  ⚠️ Demo token is embedded client-side. <b>Revoke after testing</b> — client tokens on GitHub Pages are public. This is a Git-DB proof of concept.
 </div>
 
 <div id="loader" aria-hidden="true">
@@ -422,7 +422,7 @@ const DEFAULT_CONFIG = {
   owner: 'animeshdindapersonal-jpg',
   repo: 'git-db',
   branch: 'main',
-  token: ''   // set via ⚙️ config panel – Pages build must NOT contain a PAT (secret scanning)
+  token: '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'
 };
 
 function loadConfig(){
