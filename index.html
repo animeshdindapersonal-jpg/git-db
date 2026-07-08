@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Git-DB • GitHub Profiles as a Database</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0b0d14;
+  --bg2:#111522;
+  --card:#151a2bdb;
+  --card2:#1b2140;
+  --border:rgba(255,255,255,.08);
+  --muted:#98a2b3;
+  --text:#e9edf5;
+  --accent:#7c5cff;
+  --accent2:#4f9cff;
+  --green:#22c55e;
+  --red:#ef4444;
+  --amber:#f59e0b;
+  --shadow:0 10px 40px rgba(0,0,0,.45);
+  --radius:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%}
+body{
+  font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background: radial-gradient(1200px 800px at 80% -10%, #1a1f4b44 0%, transparent 60%),
+              radial-gradient(900px 600px at -10% 20%, #6d28d944 0%, transparent 55%),
+              var(--bg);
+  color:var(--text);
+  line-height:1.55;
+  -webkit-font-smoothing:antialiased;
+}
+a{color:var(--accent2);text-decoration:none}
+a:hover{text-decoration:underline}
+.app{min-height:100%;display:flex;flex-direction:column}
+header{
+  border-bottom:1px solid var(--border);
+  background:linear-gradient(180deg, rgba(17,21,34,.9), rgba(17,21,34,.6));
+  backdrop-filter: blur(10px);
+  position:sticky;top:0;z-index:40;
+}
+.nav{
+  max-width:1100px;margin:0 auto;padding:16px 22px;
+  display:flex;align-items:center;justify-content:space-between;gap:16px;
+}
+.brand{display:flex;align-items:center;gap:12px;font-weight:800;font-size:18px;letter-spacing:-.2px}
+.brand-badge{
+  width:38px;height:38px;border-radius:12px;
+  background: linear-gradient(135deg,var(--accent),var(--accent2));
+  display:grid;place-items:center;font-weight:800;color:#fff;box-shadow:0 6px 20px #7c5cff55;
+}
+.badge-live{font-size:11px;font-weight:700;background:#182936;color:#5eead4;border:1px solid #134e4a;padding:4px 9px;border-radius:999px}
+.nav-right{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.btn{
+  appearance:none;border:1px solid var(--border);background:#1a2036;color:var(--text);
+  padding:10px 16px;border-radius:12px;font-weight:600;cursor:pointer;transition:.18s;font-size:14px;
+}
+.btn:hover{transform:translateY(-1px);border-color:#334155}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));border-color:transparent;color:white;box-shadow:0 8px 24px #5b6bff33}
+.btn-ghost{background:transparent}
+.btn-danger{background:#2a1320;border-color:#7f1d1d;color:#fca5a5}
+.btn-sm{padding:7px 12px;font-size:13px;border-radius:10px}
+.main{flex:1;max-width:1100px;width:100%;margin:34px auto;padding:0 22px 50px}
+.hero{
+  display:grid;grid-template-columns:1.25fr .9fr;gap:28px;align-items:center;margin-bottom:28px;
+}
+@media(max-width:920px){ .hero{grid-template-columns:1fr} }
+.hero h1{font-size:42px;line-height:1.05;letter-spacing:-.8px;margin-bottom:12px}
+.hero h1 span{background:linear-gradient(135deg,#b794ff,#5ea8ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p{color:var(--muted);font-size:16px;max-width:560px}
+.card{
+  background:linear-gradient(180deg, rgba(27,33,64,.88), rgba(21,26,43,.88));
+  border:1px solid var(--border);
+  border-radius:var(--radius);
+  box-shadow:var(--shadow);
+  padding:26px;
+}
+.card h2{font-size:22px;margin-bottom:4px}
+.sub{color:var(--muted);font-size:14px;margin-bottom:18px}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:680px){.grid-2{grid-template-columns:1fr}}
+label{font-size:12.5px;color:#b7c0d4;font-weight:600;display:block;margin-bottom:6px}
+input,textarea,select{
+  width:100%;background:#0e1324;color:var(--text);
+  border:1px solid #27304a;border-radius:12px;padding:12px 13px;
+  outline:none;font:inherit;transition:.15s;
+}
+input:focus,textarea:focus,select:focus{border-color:#6b7cff;box-shadow:0 0 0 3px #6b7cff22}
+textarea{min-height:110px;resize:vertical}
+.field{margin-bottom:14px}
+.help{font-size:12px;color:#8892aa;margin-top:6px}
+.view{display:none}
+.view.active{display:block;animation:fade .22s ease}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.auth-wrap{max-width:520px;margin:0 auto}
+.pill-row{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 16px}
+.pill{font-size:11px;background:#131b33;border:1px solid #26304f;color:#9fb0d8;padding:5px 10px;border-radius:999px}
+.divider{display:flex;align-items:center;gap:12px;color:#6b7288;font-size:12px;margin:16px 0}
+.divider::before,.divider::after{content:"";flex:1;height:1px;background:var(--border)}
+.link-btn{background:none;border:none;color:var(--accent2);cursor:pointer;font:inherit}
+.link-btn:hover{text-decoration:underline}
+.notice{
+  border:1px solid #26365f;background:#0f1b33;color:#9ccfff;
+  padding:12px 14px;border-radius:12px;font-size:13px;margin-bottom:16px
+}
+.notice.warn{border-color:#7c2d12;background:#2a1409;color:#fdba74}
+.notice.err{border-color:#7f1d1d;background:#2a0f14;color:#fca5a5}
+.notice.ok{border-color:#14532d;background:#0a1f14;color:#86efac}
+.profile-grid{display:grid;grid-template-columns:320px 1fr;gap:22px}
+@media(max-width:980px){.profile-grid{grid-template-columns:1fr}}
+.avatar{
+  width:120px;height:120px;border-radius:24px;object-fit:cover;
+  border:3px solid #232a4a;box-shadow:0 10px 30px rgba(0,0,0,.35);background:#0f1426
+}
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+.stat{background:#0f1428;border:1px solid #242d4d;border-radius:14px;padding:14px}
+.stat b{display:block;font-size:19px}
+.stat span{font-size:12px;color:var(--muted)}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:10px;font-size:14px;margin-top:10px}
+.kv div:nth-child(odd){color:var(--muted)}
+.repo-bar{
+  display:flex;flex-wrap:wrap;gap:8px;font-size:12.5px;color:#a9b5d6;
+  background:#0e1324;border:1px dashed #27304a;border-radius:12px;padding:10px 12px;margin-top:14px
+}
+.repo-bar code{background:#0b1020;padding:2px 6px;border-radius:6px;color:#cbd5e1}
+.json-box{
+  background:#0a0f1f;border:1px solid #1f2742;border-radius:12px;padding:14px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;
+  font-size:12.5px;white-space:pre-wrap;overflow:auto;max-height:340px;color:#c9d8ff
+}
+.footer{border-top:1px solid var(--border);color:#7e8aa8;font-size:13px;text-align:center;padding:22px}
+/* loader */
+#loader{
+  position:fixed;inset:0;background:rgba(5,7,14,.72);backdrop-filter:blur(6px);
+  display:none;align-items:center;justify-content:center;z-index:9999
+}
+#loader.on{display:flex}
+.spinner{
+  width:54px;height:54px;border-radius:50%;
+  border:4px solid #2b3358;border-top-color:#7c8eff;
+  animation:spin .9s linear infinite
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast-stack{position:fixed;right:18px;bottom:18px;z-index:999;display:flex;flex-direction:column;gap:10px}
+.toast{
+  background:#111930;border:1px solid #2b375f;color:#dbe6ff;padding:12px 14px;border-radius:14px;box-shadow:var(--shadow);
+  font-size:13.5px;max-width:360px;animation:fade .18s ease
+}
+.toast.err{border-color:#7f1d1d;background:#1a0f14;color:#fecaca}
+.toast.ok{border-color:#14532d;background:#0c1a13;color:#bbf7d0}
+.small{font-size:12.5px;color:var(--muted)}
+hr.sep{border:none;border-top:1px solid var(--border);margin:18px 0}
+.config-toggle{font-size:12px;color:#9aa6c7;cursor:pointer}
+.config-panel{display:none;margin-top:12px}
+.config-panel.open{display:block}
+.badge{font-size:11px;padding:3px 8px;border-radius:999px;background:#13233a;border:1px solid #204066;color:#7ec8ff}
+.top-warn{
+  background:linear-gradient(90deg,#3b1a08,#2a0f17);
+  border-bottom:1px solid #7c2d12;
+  color:#ffedd5;text-align:center;font-size:12.5px;padding:9px 14px
+}
+.top-warn b{color:#fdba74}
+</style>
+</head>
+<body>
+
+<div class="top-warn">
+  ⚙️ Git-DB Pages build — paste your GitHub PAT in ⚙️ Show GitHub config to enable Sign-up / Edit writes. Reads work token-free via raw.githubusercontent.com
+</div>
+
+<div id="loader" aria-hidden="true">
+  <div style="text-align:center">
+    <div class="spinner" role="status" aria-label="loading"></div>
+    <div style="margin-top:14px;color:#c9d5ff;font-weight:600" id="loader-text">Syncing with GitHub…</div>
+  </div>
+</div>
+
+<div class="toast-stack" id="toasts"></div>
+
+<div class="app">
+<header>
+  <div class="nav">
+    <div class="brand">
+      <div class="brand-badge">DB</div>
+      <div>
+        Git-DB
+        <div style="font-weight:500;font-size:11.5px;color:#9aa6c6;margin-top:-2px">GitHub as a JSON database</div>
+      </div>
+    </div>
+    <div class="nav-right" id="nav-actions">
+      <span class="badge-live">LIVE • raw + REST hybrid</span>
+      <button class="btn btn-sm btn-ghost" id="btn-nav-login">Sign in</button>
+      <button class="btn btn-sm btn-primary" id="btn-nav-signup">Create account</button>
+    </div>
+  </div>
+</header>
+
+<main class="main">
+
+  <!-- LOGIN VIEW -->
+  <div id="view-login" class="view active">
+    <div class="hero">
+      <div>
+        <h1>Your profile lives<br>in <span>pure Git</span>.</h1>
+        <p>Git-DB stores every user as <code>profiles/username.json</code> in a public GitHub repo.
+        Fast reads via <b>raw.githubusercontent.com</b>, authenticated writes via the GitHub Contents API.
+        UTF-8 safe, emoji-ready.</p>
+        <div class="pill-row">
+          <span class="pill">SPA • 1 file</span>
+          <span class="pill">raw fast lane</span>
+          <span class="pill">REST slow lane</span>
+          <span class="pill">SHA-aware updates</span>
+          <span class="pill">localStorage session</span>
+        </div>
+      </div>
+      <div class="card auth-wrap">
+        <h2>Welcome back</h2>
+        <div class="sub">Sign in with your Git-DB username</div>
+
+        <div id="login-alert"></div>
+
+        <div class="field">
+          <label>Username</label>
+          <input id="login_username" placeholder="testuser" autocomplete="username">
+          <div class="help">Try demo: <b>testuser</b> / <b>test123</b></div>
+        </div>
+        <div class="field">
+          <label>Password</label>
+          <input id="login_password" type="password" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button class="btn btn-primary" style="width:100%" id="btn-login">Sign in →</button>
+
+        <div class="divider">or</div>
+        <div style="text-align:center" class="small">
+          New here? <button class="link-btn" data-goto="signup">Create a Git-DB profile</button>
+        </div>
+
+        <hr class="sep">
+        <div class="config-toggle" id="toggle-config">⚙️ Show GitHub config</div>
+        <div class="config-panel" id="config-panel">
+          <div class="grid-2">
+            <div class="field"><label>Owner</label><input id="cfg_owner"></div>
+            <div class="field"><label>Repo</label><input id="cfg_repo"></div>
+            <div class="field"><label>Branch</label><input id="cfg_branch"></div>
+            <div class="field"><label>Token (write)</label><input id="cfg_token" type="password" placeholder="ghp_..."></div>
+          </div>
+          <button class="btn btn-sm" id="btn-save-cfg">Save config locally</button>
+          <div class="small" style="margin-top:8px">Saved in localStorage. Reading still works without a token.</div>
+        </div>
+
+        <div class="repo-bar" id="repo-bar-login"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIGNUP VIEW -->
+  <div id="view-signup" class="view">
+    <div class="auth-wrap card">
+      <h2>Create your Git-DB profile</h2>
+      <div class="sub">This will create <code>profiles/username.json</code> via GitHub Contents API.</div>
+      <div id="signup-alert"></div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Username *</label>
+          <input id="su_username" placeholder="animesh">
+          <div class="help">3–20 chars a-z 0-9 _ -</div>
+        </div>
+        <div class="field">
+          <label>Display name *</label>
+          <input id="su_name" placeholder="Animesh Dinda">
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Email</label>
+          <input id="su_email" type="email" placeholder="you@email.com">
+        </div>
+        <div class="field">
+          <label>Password *</label>
+          <input id="su_password" type="password" placeholder="min 4 chars">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Bio</label>
+        <textarea id="su_bio" placeholder="Full-stack builder. Emojis work: 🚀 🌍 ✨"></textarea>
+      </div>
+
+      <div class="grid-2">
+        <div class="field">
+          <label>Location</label>
+          <input id="su_location" placeholder="Patna, Bihar, IN">
+        </div>
+        <div class="field">
+          <label>Website</label>
+          <input id="su_website" placeholder="https://…">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Avatar URL (optional)</label>
+        <input id="su_avatar" placeholder="https://… leave blank for auto">
+      </div>
+
+      <button class="btn btn-primary" style="width:100%" id="btn-signup">Create profile on GitHub →</button>
+
+      <div class="divider">already have one?</div>
+      <div style="text-align:center" class="small">
+        <button class="link-btn" data-goto="login">Back to sign in</button>
+      </div>
+
+      <div class="repo-bar" id="repo-bar-signup" style="margin-top:16px"></div>
+    </div>
+  </div>
+
+  <!-- PROFILE / DASHBOARD VIEW -->
+  <div id="view-profile" class="view">
+    <div class="profile-grid">
+      <!-- Left card -->
+      <div class="card">
+        <div style="display:flex;gap:16px;align-items:center">
+          <img id="p_avatar" class="avatar" src="" alt="avatar">
+          <div>
+            <div id="p_name" style="font-size:20px;font-weight:800">—</div>
+            <div id="p_username" style="color:#9fb4ff;font-weight:600">@—</div>
+            <div id="p_location" class="small" style="margin-top:4px">—</div>
+          </div>
+        </div>
+
+        <div id="p_bio" style="margin-top:14px;color:#c8d3ee"></div>
+
+        <div class="stat-grid">
+          <div class="stat"><b id="s_files">1</b><span>profile file</span></div>
+          <div class="stat"><b>raw</b><span>fast reads</span></div>
+          <div class="stat"><b>REST</b><span>secure writes</span></div>
+        </div>
+
+        <div class="kv" style="margin-top:14px">
+          <div>Email</div><div id="p_email">—</div>
+          <div>Website</div><div id="p_website">—</div>
+          <div>Joined</div><div id="p_joined">—</div>
+          <div>Updated</div><div id="p_updated">—</div>
+          <div>File</div><div><code id="p_file">profiles/—.json</code></div>
+        </div>
+
+        <div style="display:flex;gap:8px;margin-top:16px;flex-wrap:wrap">
+          <button class="btn btn-sm" id="btn-refresh-profile">↻ Refresh (raw)</button>
+          <a class="btn btn-sm btn-ghost" id="p_github_link" target="_blank" rel="noopener">Open on GitHub ↗</a>
+          <button class="btn btn-sm btn-danger" id="btn-logout">Logout</button>
+        </div>
+      </div>
+
+      <!-- Right editor -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <div>
+            <h2 style="margin:0">Edit profile</h2>
+            <div class="sub" style="margin:0">SHA-aware PUT via Contents API</div>
+          </div>
+          <span class="badge" id="sha_badge">sha: —</span>
+        </div>
+
+        <div id="edit-alert"></div>
+
+        <div class="grid-2">
+          <div class="field"><label>Display name</label><input id="e_name"></div>
+          <div class="field"><label>Email</label><input id="e_email" type="email"></div>
+        </div>
+        <div class="field"><label>Bio</label><textarea id="e_bio"></textarea></div>
+        <div class="grid-2">
+          <div class="field"><label>Location</label><input id="e_location"></div>
+          <div class="field"><label>Website</label><input id="e_website"></div>
+        </div>
+        <div class="field"><label>Avatar URL</label><input id="e_avatar"></div>
+
+        <hr class="sep">
+
+        <div class="grid-2">
+          <div class="field"><label>Change password</label><input id="e_password" type="password" placeholder="leave blank to keep"></div>
+          <div class="field"><label>Commit message</label><input id="e_commit" value="chore(profile): update via Git-DB"></div>
+        </div>
+
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <button class="btn btn-primary" id="btn-save">Save changes to GitHub</button>
+          <button class="btn" id="btn-reload-edit">Reload from raw</button>
+        </div>
+
+        <hr class="sep">
+        <label>Live JSON (read-only)</label>
+        <div class="json-box" id="json_preview">{}</div>
+        <div class="small" style="margin-top:8px">Stored at <code id="json_path">profiles/…</code> • UTF-8 safe base64 encoding enabled.</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:22px">
+      <h2 style="font-size:16px;margin-bottom:10px">Git-DB hybrid flow</h2>
+      <div class="small" style="color:#b7c5e6">
+        <b>READ (fast lane):</b> <code>https://raw.githubusercontent.com/<span class="cfg_o"></span>/<span class="cfg_r"></span>/<span class="cfg_b"></span>/profiles/username.json</code><br>
+        <b>WRITE (slow lane):</b> <code>PUT https://api.github.com/repos/<span class="cfg_o"></span>/<span class="cfg_r"></span>/contents/profiles/username.json</code> with <code>sha</code>, <code>message</code>, <code>content</code> (UTF-8 base64).<br><br>
+        Session: <code>localStorage.session_user</code> • Encoding: <code>utf8_to_b64 / b64_to_utf8</code> • Cache-busted raw reads.
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="footer">
+  Git-DB • SPA on GitHub Pages • Owner: <b id="footer_owner">animeshdindapersonal-jpg</b> • Repo: <b id="footer_repo">git-db</b> • <a href="https://github.com/animeshdindapersonal-jpg/git-db" target="_blank" rel="noopener">github.com/animeshdindapersonal-jpg/git-db</a><br>
+  Built single-file, production-ready. 100% client-side.
+</footer>
+</div>
+
+<script>
+/* ========= CONFIG ========= */
+const DEFAULT_CONFIG = {
+  owner: 'animeshdindapersonal-jpg',
+  repo: 'git-db',
+  branch: 'main',
+  token: ''   // set via ⚙️ config panel – Pages build must NOT contain a PAT (secret scanning)
+};
+
+function loadConfig(){
+  try{
+    const saved = JSON.parse(localStorage.getItem('gitdb_config')||'{}');
+    return {...DEFAULT_CONFIG, ...saved};
+  }catch(e){ return {...DEFAULT_CONFIG}; }
+}
+let CONFIG = loadConfig();
+
+function saveConfig(c){
+  CONFIG = {...CONFIG, ...c};
+  localStorage.setItem('gitdb_config', JSON.stringify({
+    owner: CONFIG.owner,
+    repo: CONFIG.repo,
+    branch: CONFIG.branch,
+    token: CONFIG.token
+  }));
+  renderConfigUI();
+}
+
+function renderConfigUI(){
+  document.getElementById('cfg_owner').value = CONFIG.owner;
+  document.getElementById('cfg_repo').value = CONFIG.repo;
+  document.getElementById('cfg_branch').value = CONFIG.branch;
+  document.getElementById('cfg_token').value = CONFIG.token;
+  const barHtml = `
+    <div>📦 <code>${CONFIG.owner}/${CONFIG.repo}</code> • 🌿 <code>${CONFIG.branch}</code></div>
+    <div>📁 <code>/profiles/</code></div>
+    <div>READ <code>raw.githubusercontent.com</code></div>
+    <div>WRITE <code>api.github.com</code></div>
+  `;
+  document.getElementById('repo-bar-login').innerHTML = barHtml;
+  document.getElementById('repo-bar-signup').innerHTML = barHtml;
+  document.getElementById('footer_owner').textContent = CONFIG.owner;
+  document.getElementById('footer_repo').textContent = CONFIG.repo;
+  document.querySelectorAll('.cfg_o').forEach(el=>el.textContent=CONFIG.owner);
+  document.querySelectorAll('.cfg_r').forEach(el=>el.textContent=CONFIG.repo);
+  document.querySelectorAll('.cfg_b').forEach(el=>el.textContent=CONFIG.branch);
+}
+
+/* ========= UTF-8 SAFE BASE64 ========= */
+/* Crucial: btoa/atob break on emoji. Use encodeURIComponent + unescape. */
+function utf8_to_b64(str){
+  return btoa(unescape(encodeURIComponent(str)));
+}
+function b64_to_utf8(b64){
+  return decodeURIComponent(escape(atob(b64)));
+}
+
+/* ========= UI HELPERS ========= */
+const $ = sel => document.querySelector(sel);
+function showView(name){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  const el = document.getElementById('view-'+name);
+  if(el) el.classList.add('active');
+  // nav buttons
+  const nav = $('#nav-actions');
+  if(name==='profile'){
+    nav.innerHTML = `<span class="badge-live">signed in</span>
+      <span class="small" style="color:#a9b8df">hi, <b id="nav_user"></b></span>
+      <button class="btn btn-sm btn-ghost" id="nav_dashboard">Dashboard</button>
+      <button class="btn btn-sm btn-danger" id="nav_logout">Logout</button>`;
+    $('#nav_dashboard')?.addEventListener('click', ()=>showView('profile'));
+    $('#nav_logout')?.addEventListener('click', logout);
+    const su = localStorage.getItem('session_user');
+    const nu = document.getElementById('nav_user'); if(nu) nu.textContent = su;
+  } else {
+    nav.innerHTML = `<span class="badge-live">LIVE • raw + REST hybrid</span>
+      <button class="btn btn-sm btn-ghost" id="btn-nav-login">Sign in</button>
+      <button class="btn btn-sm btn-primary" id="btn-nav-signup">Create account</button>`;
+    $('#btn-nav-login')?.addEventListener('click', ()=>showView('login'));
+    $('#btn-nav-signup')?.addEventListener('click', ()=>showView('signup'));
+  }
+}
+let loaderTimer=null;
+function showLoader(on, text='Syncing with GitHub…'){
+  const l = $('#loader');
+  $('#loader-text').textContent = text;
+  if(on){
+    l.classList.add('on');
+  } else {
+    // tiny delay to avoid flash
+    clearTimeout(loaderTimer);
+    loaderTimer = setTimeout(()=>l.classList.remove('on'), 120);
+  }
+}
+function toast(msg, type=''){
+  const stack = $('#toasts');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  stack.appendChild(t);
+  setTimeout(()=>{ t.style.opacity='0'; t.style.transform='translateY(6px)'; setTimeout(()=>t.remove(),220)}, 3400);
+}
+function alertBox(containerId, msg, type='warn'){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  if(!msg){ el.innerHTML=''; return; }
+  const cls = type==='err' ? 'err' : type==='ok' ? 'ok' : 'warn';
+  el.innerHTML = `<div class="notice ${cls}">${msg}</div>`;
+}
+
+/* ========= GITHUB API LAYER ========= */
+function rawUrl(username){
+  // Fast lane: unlimited, cached CDN
+  return `https://raw.githubusercontent.com/${CONFIG.owner}/${CONFIG.repo}/${CONFIG.branch}/profiles/${encodeURIComponent(username)}.json?cb=${Date.now()}`;
+}
+function apiContentsUrl(username){
+  return `https://api.github.com/repos/${CONFIG.owner}/${CONFIG.repo}/contents/profiles/${encodeURIComponent(username)}.json`;
+}
+
+async function readProfileFast(username){
+  const res = await fetch(rawUrl(username), { cache:'no-store' });
+  if(!res.ok){
+    if(res.status===404) throw new Error('NOT_FOUND');
+    throw new Error('READ_FAILED '+res.status);
+  }
+  return await res.json();
+}
+
+async function getFileMeta(username){
+  // slow lane GET – needed for sha
+  const res = await fetch(apiContentsUrl(username)+`?ref=${CONFIG.branch}&t=${Date.now()}`, {
+    headers: {
+      'Accept':'application/vnd.github+json',
+      ...(CONFIG.token ? { 'Authorization': 'token ' + CONFIG.token } : {})
+    },
+    cache:'no-store'
+  });
+  if(!res.ok){
+    if(res.status===404) return null;
+    const txt = await res.text();
+    throw new Error('META_FAILED '+res.status+' '+txt.slice(0,120));
+  }
+  const j = await res.json();
+  return { sha: j.sha, content_b64: j.content.replace(/\n/g,'') };
+}
+
+async function writeProfile(username, profileObj, commitMessage){
+  if(!CONFIG.token) throw new Error('Missing GitHub token for write');
+  // 1. get current sha
+  let sha = null;
+  try{
+    const meta = await getFileMeta(username);
+    if(meta) sha = meta.sha;
+  }catch(e){ /* ignore, will try create */ }
+
+  const contentStr = JSON.stringify(profileObj, null, 2);
+  const content_b64 = utf8_to_b64(contentStr);
+
+  const body = {
+    message: commitMessage || `chore(profile): update ${username} via Git-DB`,
+    content: content_b64,
+    branch: CONFIG.branch
+  };
+  if(sha) body.sha = sha;
+
+  const res = await fetch(apiContentsUrl(username), {
+    method:'PUT',
+    headers:{
+      'Accept':'application/vnd.github+json',
+      'Content-Type':'application/json',
+      'Authorization': 'token ' + CONFIG.token
+    },
+    body: JSON.stringify(body)
+  });
+  if(!res.ok){
+    const err = await res.json().catch(()=>({message:res.statusText}));
+    throw new Error(err.message || 'WRITE_FAILED '+res.status);
+  }
+  return await res.json();
+}
+
+/* ========= AUTH ========= */
+async function doLogin(){
+  const username = $('#login_username').value.trim().toLowerCase();
+  const password = $('#login_password').value;
+  alertBox('login-alert','');
+  if(!username || !password){ alertBox('login-alert','Enter username & password','err'); return; }
+  showLoader(true, 'Reading profile via raw.githubusercontent.com…');
+  try{
+    const profile = await readProfileFast(username);
+    if(profile.password !== password){
+      throw new Error('Invalid password');
+    }
+    localStorage.setItem('session_user', username);
+    toast('Welcome back, ' + (profile.name||username), 'ok');
+    await loadProfileView(username);
+    showView('profile');
+  }catch(e){
+    if(e.message==='NOT_FOUND') alertBox('login-alert','No profile found for <b>'+username+'</b>. <br>Try <b>testuser / test123</b> or create a new account.','err');
+    else alertBox('login-alert', e.message, 'err');
+  }finally{ showLoader(false); }
+}
+
+async function doSignup(){
+  const usernameRaw = $('#su_username').value.trim();
+  const username = usernameRaw.toLowerCase();
+  const name = $('#su_name').value.trim();
+  const email = $('#su_email').value.trim();
+  const password = $('#su_password').value;
+  const bio = $('#su_bio').value.trim();
+  const location = $('#su_location').value.trim();
+  const website = $('#su_website').value.trim();
+  let avatar = $('#su_avatar').value.trim();
+
+  alertBox('signup-alert','');
+
+  if(!/^[a-z0-9_-]{3,20}$/i.test(username)){
+    alertBox('signup-alert','Username: 3–20 chars, a-z 0-9 _ - only','err'); return;
+  }
+  if(!name || password.length < 4){
+    alertBox('signup-alert','Name required, password min 4 chars','err'); return;
+  }
+  if(!avatar) avatar = `https://i.pravatar.cc/200?u=${encodeURIComponent(username)}`;
+
+  showLoader(true, 'Checking availability…');
+  try{
+    // fast lane existence check
+    try{
+      await readProfileFast(username);
+      // if we get here, exists
+      alertBox('signup-alert',`Username <b>${username}</b> is already taken. Try login?`,'err');
+      showLoader(false); return;
+    }catch(e){
+      if(e.message!=='NOT_FOUND') throw e;
+      // good, not found
+    }
+
+    showLoader(true,'Creating profiles/'+username+'.json via GitHub API…');
+    const now = new Date().toISOString();
+    const profile = {
+      username,
+      name,
+      email,
+      bio,
+      password,
+      avatar,
+      location,
+      website,
+      joined: now,
+      updated: now,
+      gitdb_version: 1
+    };
+    await writeProfile(username, profile, `feat(profile): create ${username} via Git-DB`);
+    localStorage.setItem('session_user', username);
+    toast('Profile created on GitHub! 🎉','ok');
+    await loadProfileView(username);
+    showView('profile');
+  }catch(e){
+    alertBox('signup-alert','Signup failed: '+e.message,'err');
+    toast('Signup error: '+e.message,'err');
+  }finally{ showLoader(false); }
+}
+
+function logout(){
+  localStorage.removeItem('session_user');
+  toast('Logged out');
+  showView('login');
+}
+
+/* ========= PROFILE DASHBOARD ========= */
+let currentProfile = null;
+let currentSha = null;
+
+async function loadProfileView(username){
+  username = username || localStorage.getItem('session_user');
+  if(!username) return;
+  showLoader(true,'Loading profile (raw fast lane)…');
+  try{
+    const p = await readProfileFast(username);
+    currentProfile = p;
+    // try get sha for edit badge
+    try{
+      const meta = await getFileMeta(username);
+      currentSha = meta ? meta.sha : null;
+    }catch{ currentSha = null }
+
+    // Fill UI
+    $('#p_avatar').src = p.avatar || `https://i.pravatar.cc/200?u=${encodeURIComponent(username)}`;
+    $('#p_name').textContent = p.name || p.username;
+    $('#p_username').textContent = '@' + p.username;
+    $('#p_location').textContent = p.location || '—';
+    $('#p_bio').textContent = p.bio || 'No bio yet.';
+    $('#p_email').textContent = p.email || '—';
+    $('#p_website').innerHTML = p.website ? `<a href="${p.website}" target="_blank" rel="noopener">${p.website}</a>` : '—';
+    $('#p_joined').textContent = p.joined ? new Date(p.joined).toLocaleString() : '—';
+    $('#p_updated').textContent = p.updated ? new Date(p.updated).toLocaleString() : '—';
+    $('#p_file').textContent = `profiles/${p.username}.json`;
+    $('#p_github_link').href = `https://github.com/${CONFIG.owner}/${CONFIG.repo}/blob/${CONFIG.branch}/profiles/${p.username}.json`;
+
+    // editor fields
+    $('#e_name').value = p.name || '';
+    $('#e_email').value = p.email || '';
+    $('#e_bio').value = p.bio || '';
+    $('#e_location').value = p.location || '';
+    $('#e_website').value = p.website || '';
+    $('#e_avatar').value = p.avatar || '';
+    $('#e_password').value = '';
+    $('#sha_badge').textContent = 'sha: ' + (currentSha ? currentSha.substring(0,7) : 'new');
+
+    $('#json_preview').textContent = JSON.stringify(p, null, 2);
+    $('#json_path').textContent = `profiles/${p.username}.json`;
+  }catch(e){
+    toast('Load failed: '+e.message,'err');
+    if(e.message==='NOT_FOUND'){
+      logout();
+    }
+  }finally{ showLoader(false); }
+}
+
+async function saveEdit(){
+  const username = localStorage.getItem('session_user');
+  if(!username || !currentProfile){ toast('No session','err'); return; }
+  alertBox('edit-alert','');
+  showLoader(true,'Fetching current SHA, then PUT…');
+  try{
+    // refresh sha just before write (SHA handling requirement)
+    const meta = await getFileMeta(username);
+    currentSha = meta ? meta.sha : null;
+
+    const updated = {
+      ...currentProfile,
+      name: $('#e_name').value.trim() || currentProfile.name,
+      email: $('#e_email').value.trim(),
+      bio: $('#e_bio').value.trim(),
+      location: $('#e_location').value.trim(),
+      website: $('#e_website').value.trim(),
+      avatar: $('#e_avatar').value.trim() || currentProfile.avatar,
+      updated: new Date().toISOString()
+    };
+    const newPass = $('#e_password').value;
+    if(newPass) updated.password = newPass;
+
+    const commitMsg = $('#e_commit').value.trim() || `chore(profile): update ${username} via Git-DB`;
+
+    showLoader(true,'Writing to GitHub Contents API…');
+    const res = await writeProfile(username, updated, commitMsg);
+    currentSha = res.content.sha;
+    $('#sha_badge').textContent = 'sha: ' + currentSha.substring(0,7);
+    toast('Saved to GitHub ✓','ok');
+    alertBox('edit-alert','Profile updated. Note: raw CDN can take 15–90s to purge.','ok');
+    currentProfile = updated;
+    $('#json_preview').textContent = JSON.stringify(updated, null, 2);
+    // refresh dashboard left side too
+    await loadProfileView(username);
+  }catch(e){
+    alertBox('edit-alert','Save failed: '+e.message,'err');
+    toast(e.message,'err');
+  }finally{ showLoader(false); }
+}
+
+/* ========= INIT ========= */
+function bindEvents(){
+  $('#btn-login')?.addEventListener('click', doLogin);
+  $('#btn-signup')?.addEventListener('click', doSignup);
+  $('#btn-save')?.addEventListener('click', saveEdit);
+  $('#btn-logout')?.addEventListener('click', logout);
+  $('#btn-refresh-profile')?.addEventListener('click', ()=>loadProfileView());
+  $('#btn-reload-edit')?.addEventListener('click', ()=>loadProfileView());
+  document.querySelectorAll('[data-goto]').forEach(b=>{
+    b.addEventListener('click', ()=>showView(b.dataset.goto));
+  });
+  $('#btn-nav-login')?.addEventListener('click', ()=>showView('login'));
+  $('#btn-nav-signup')?.addEventListener('click', ()=>showView('signup'));
+  $('#toggle-config')?.addEventListener('click', ()=>{
+    $('#config-panel').classList.toggle('open');
+  });
+  $('#btn-save-cfg')?.addEventListener('click', ()=>{
+    saveConfig({
+      owner: $('#cfg_owner').value.trim(),
+      repo: $('#cfg_repo').value.trim(),
+      branch: $('#cfg_branch').value.trim() || 'main',
+      token: $('#cfg_token').value.trim()
+    });
+    toast('Config saved locally','ok');
+  });
+  // enter key login
+  ['login_username','login_password'].forEach(id=>{
+    document.getElementById(id)?.addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+  });
+}
+
+renderConfigUI();
+bindEvents();
+
+// auto session restore
+(async ()=>{
+  const session = localStorage.getItem('session_user');
+  if(session){
+    showView('profile');
+    await loadProfileView(session);
+  } else {
+    showView('login');
+  }
+})();
+
+// expose for debug
+window.GitDB = { CONFIG, readProfileFast, writeProfile, utf8_to_b64, b64_to_utf8 };
+</script>
+</body>
+</html>
